@@ -1,0 +1,74 @@
+name: ghstat
+version: "0.1.0"
+
+summary: Gather statistics about hiring reqs on Greenhouse
+description: |
+  ghstat provides automation for gather statistics about a given Hiring Lead and the roles
+  they manage as part of Canonical's hiring process.
+
+license: Apache-2.0
+contact: https://github.com/jnsgruk/ghstat/issues
+issues: https://github.com/jnsgruk/ghstat/issues
+source-code: https://github.com/jnsgruk/ghstat
+
+base: core22
+confinement: strict
+grade: stable
+compression: lzo
+
+architectures:
+  - amd64
+  - arm64
+
+parts:
+  ghstat:
+    plugin: nil
+    source: .
+    build-snaps:
+      - chromium
+      - go
+    override-build: |
+      mkdir -p $SNAPCRAFT_PART_INSTALL/bin
+      go build -o $SNAPCRAFT_PART_INSTALL/ghstat
+
+      # Cleanup some Chromium induced filesystem mess that fails the Snap review process
+      rm $SNAPCRAFT_PART_INSTALL/usr/bin/xdg-email
+      chmod 555 $SNAPCRAFT_PART_INSTALL/usr/lib/chromium-browser/chrome-sandbox
+    stage-snaps:
+      - chromium
+    stage-packages:
+      # dependencies required by chromium
+      - libasound2
+      - libatk-bridge2.0-0
+      - libatk1.0-0
+      - libatspi2.0-0
+      - libcairo2
+      - libcups2
+      - libdrm2
+      - libgbm1
+      - libnss3
+      - libpango-1.0-0
+      - libx11-6
+      - libxau6
+      - libxcb1
+      - libxcomposite1
+      - libxdamage1
+      - libxdmcp6
+      - libxext6
+      - libxfixes3
+      - libxkbcommon-x11-0
+      - libxrandr2
+apps:
+  ghstat:
+    command: ghstat
+    plugs:
+      - desktop
+      - desktop-legacy
+      - home
+      - mount-observe
+      - network
+      - network-bind
+      - opengl
+      - unity7
+      - x11
+      - password-manager-service

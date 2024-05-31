@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  binaries:
+    name: Build and Release ghstat
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+
+      - name: Setup goreleaser
+        run: |
+          sudo snap install --classic goreleaser
+
+      - name: Release ghstat
+        id: build
+        run: |
+          goreleaser release --debug --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghstat-dist
+          if-no-files-found: error
+          path: dist
+
+  snap:
+    name: Build snap
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup LXD
+        uses: canonical/setup-lxd@main
+
+      - name: Setup Snapcraft
+        run: |
+          sudo snap install snapcraft --classic
+
+      - name: Build snap
+        run: |
+          snapcraft --verbose

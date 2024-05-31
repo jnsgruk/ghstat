@@ -1,0 +1,7 @@
+*.env
+*.json
+*.snap
+*.txt
+ghstat.yaml
+
+dist/

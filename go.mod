@@ -3,7 +3,7 @@ module jnsgruk/ghstat
 go 1.22.2
 
 require (
-	github.com/fatih/color v1.14.1
+	github.com/fatih/color v1.17.0
 	github.com/fbiville/markdown-table-formatter v0.3.0
 	github.com/go-rod/rod v0.116.0
 	github.com/kirsle/configdir v0.0.0-20170128060238-e45d2f54772f
@@ -21,7 +21,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect

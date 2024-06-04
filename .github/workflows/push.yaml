@@ -85,5 +85,5 @@ jobs:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_SECRET }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          snapcraft upload "ghstat_${version}_amd64.snap" --release latest/edge
-          snapcraft upload "ghstat_${version}_arm64.snap" --release latest/edge
+          snapcraft upload "ghstat_${VERSION}_amd64.snap" --release latest/edge
+          snapcraft upload "ghstat_${VERSION}_arm64.snap" --release latest/edge

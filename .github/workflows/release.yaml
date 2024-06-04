@@ -73,7 +73,9 @@ jobs:
           SNAPCRAFT_REMOTE_BUILD_STRATEGY: force-fallback
           VERSION: ${{ steps.version.outputs.version }}
         run: |
+          echo "::group::remote-build output"
           snapcraft remote-build --launchpad-accept-public-upload
+          echo "::endgroup::"
 
           echo "::group::amd64 build log"
           cat "ghstat_amd64.txt"

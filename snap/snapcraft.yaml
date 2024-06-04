@@ -17,8 +17,8 @@ grade: stable
 compression: lzo
 
 architectures:
-  - amd64
-  - arm64
+  - build-on: amd64
+  - build-on: arm64
 
 parts:
   ghstat:

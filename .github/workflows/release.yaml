@@ -50,10 +50,43 @@ jobs:
       - name: Setup LXD
         uses: canonical/setup-lxd@main
 
+      - name: Get version
+        id: version
+        run: |
+          echo "version=$(yq -r ".version" snap/snapcraft.yaml)" >> "$GITHUB_OUTPUT"
+
       - name: Setup Snapcraft
+        env:
+          LP_BUILD_SECRET: ${{ secrets.LP_BUILD_SECRET }}
         run: |
           sudo snap install snapcraft --classic
 
+          mkdir -p ~/.local/share/snapcraft/provider/launchpad ~/.local/share/snapcraft
+          echo "${LP_BUILD_SECRET}" > ~/.local/share/snapcraft/provider/launchpad/credentials
+          echo "${LP_BUILD_SECRET}" > ~/.local/share/snapcraft/launchpad-credentials
+
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "Github Actions"
+
       - name: Build snap
+        env:
+          SNAPCRAFT_REMOTE_BUILD_STRATEGY: force-fallback
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          snapcraft --verbose
+          snapcraft remote-build --launchpad-accept-public-upload
+
+          echo "::group::amd64 build log"
+          cat "ghstat_amd64.txt"
+          echo "::endgroup::"
+
+          echo "::group::arm64 build log"
+          cat "ghstat_arm64.txt"
+          echo "::endgroup::"
+
+      - name: Release snap to edge
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_SECRET }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          snapcraft upload "ghstat_${version}_amd64.snap" --release latest/candidate
+          snapcraft upload "ghstat_${version}_arm64.snap" --release latest/candidate

@@ -39,7 +39,7 @@ jobs:
           path: dist
 
   snap:
-    name: Build snap
+    name: Build and Release snap
     runs-on: ubuntu-latest
     steps:
       - name: Check out the code

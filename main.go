@@ -115,7 +115,7 @@ var rootCmd = &cobra.Command{
 		manager.Process(leads)
 
 		if !verbose {
-			s.Finish()
+			s.Succeed()
 		}
 
 		// Dump the results to stdout using the specified formatter

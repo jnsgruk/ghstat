@@ -51,12 +51,23 @@ func (m *Manager) Init() error {
 	// Launch the browser and ensure that we can connect to the dev tools port.
 	// If we're inside a snap, use the `--no-sandbox` flag.
 	if len(os.Getenv("SNAP")) > 0 {
-		u = launcher.New().Bin(path).NoSandbox(true).MustLaunch()
+		u, err = launcher.New().Bin(path).NoSandbox(true).Launch()
 	} else {
-		u = launcher.New().Bin(path).MustLaunch()
+		u, err = launcher.New().Bin(path).Launch()
 	}
 
-	m.browser = rod.New().ControlURL(u).MustConnect()
+	if err != nil {
+		return fmt.Errorf("failed to launch browser: %w", err)
+	}
+
+	m.browser = rod.New().ControlURL(u)
+	slog.Debug("got browser control url", "url", u)
+
+	err = m.browser.Connect()
+	if err != nil {
+		return fmt.Errorf("failed to connect to browser control url: %w", err)
+	}
+	slog.Debug("connected to browser control url")
 
 	// Load cookies if available, short-circuiting the need to login again
 	savedCookies, err := m.loadCookies()
@@ -78,17 +89,14 @@ func (m *Manager) Init() error {
 // Process iterates over the configured roles and gathers statistics about them
 func (m *Manager) Process(filter []string) {
 	wg := sync.WaitGroup{}
-
 	for _, lead := range m.filterLeads(filter) {
 		lead := lead
 		for _, roleId := range lead.Roles {
 			roleId := roleId
-
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
 				slog.Debug("processing role", "roleId", roleId, "lead", lead.Name)
-
 				g := Greenhouse{browser: m.browser}
 
 				m.roles = append(m.roles, Role{
@@ -148,10 +156,18 @@ func (m *Manager) filterLeads(filter []string) []Lead {
 // created before, and if not walks the user through the login flow by prompting
 // for their username, password and OTP
 func (m *Manager) checkLoggedIn() error {
-	page := m.browser.MustPage("https://canonical.greenhouse.io").MustWaitStable()
+	page, err := m.browser.Page(proto.TargetCreateTarget{URL: "https://canonical.greenhouse.io"})
+	if err != nil {
+		return fmt.Errorf("failed to open url 'https://canonical.greenhouse.io': %w", err)
+	}
 
 	// If redirected to the Ubuntu One login, handle the login correctly
-	if page.MustInfo().URL == "https://login.ubuntu.com/+login?next=%2Fsaml%2Fprocess" {
+	info, err := page.Info()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve page information: %w", err)
+	}
+
+	if info.URL == "https://login.ubuntu.com/+login?next=%2Fsaml%2Fprocess" {
 		var (
 			login    string
 			password string

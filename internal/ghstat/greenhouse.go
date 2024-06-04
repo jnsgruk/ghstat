@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/proto"
 )
 
 // Greenhouse is an internal representation of an instance of Greenhouse
@@ -18,14 +19,24 @@ type Greenhouse struct {
 // RoleTitle takes a role ID and returns the req title as a string
 func (g *Greenhouse) RoleTitle(roleId int64) string {
 	slog.Debug("fetching job title for role", "role", roleId)
-	page := g.getCandidatesPage(roleId, map[string]string{})
-	el, err := page.Timeout(2 * time.Second).Element(".nav-title")
+
+	page, err := g.getCandidatesPage(roleId, map[string]string{})
+	if err != nil {
+		return ""
+	}
+
+	el, err := page.Element(".nav-title")
 	if err != nil {
 		slog.Debug("failed to retrieve title for role", "role", roleId, "error", err.Error())
 		return "-"
 	}
 
-	return el.MustText()
+	text, err := el.Text()
+	if err != nil {
+		return ""
+	}
+
+	return text
 }
 
 // AppReviews returns the number of outstanding application reviews for a given role as an int
@@ -131,20 +142,28 @@ func (g *Greenhouse) StaleCandidates(roleId int64) int {
 // getCandidateCount is a helper method for requesting Greenhouse candidate pages with
 // a specified set of query parameters in the URL
 func (g *Greenhouse) getCandidateCount(roleId int64, queries map[string]string) (int, error) {
-	page := g.getCandidatesPage(roleId, queries)
+	page, err := g.getCandidatesPage(roleId, queries)
+	if err != nil {
+		return -1, fmt.Errorf("failed to retreive candidate page: %w", err)
+	}
 
 	// If this element is present, the number of results is zero
-	_, err := page.Timeout(1 * time.Second).Element(".no_results--header")
+	_, err = page.Timeout(time.Second).Element(".no_results--header")
 	if err == nil {
 		return 0, nil
 	}
 
-	rc, err := page.Timeout(1 * time.Second).Element("#results_count")
+	rc, err := page.Timeout(time.Second).Element("#results_count")
 	if err != nil {
 		return -1, fmt.Errorf("failed to retrieve candidate count")
 	}
 
-	count, err := strconv.Atoi(rc.MustText())
+	rcStr, err := rc.Text()
+	if err != nil {
+		return -1, fmt.Errorf("failed fetch candidate count")
+	}
+
+	count, err := strconv.Atoi(rcStr)
 	if err != nil {
 		return -1, fmt.Errorf("failed to parse count as integer")
 	}
@@ -154,7 +173,7 @@ func (g *Greenhouse) getCandidateCount(roleId int64, queries map[string]string) 
 
 // getCandidatesPage is a helper method to construct and fetch the Candidates listing
 // page for a given role, with a specified set of URL query parameters
-func (g *Greenhouse) getCandidatesPage(roleId int64, queries map[string]string) *rod.Page {
+func (g *Greenhouse) getCandidatesPage(roleId int64, queries map[string]string) (*rod.Page, error) {
 	pageUrl := url.URL{}
 	pageUrl.Scheme = "https"
 	pageUrl.Host = "canonical.greenhouse.io"
@@ -172,5 +191,12 @@ func (g *Greenhouse) getCandidatesPage(roleId int64, queries map[string]string) 
 
 	pageUrl.RawQuery = fields.Encode()
 
-	return g.browser.MustPage(pageUrl.String()).MustWaitStable()
+	page, err := g.browser.Page(proto.TargetCreateTarget{URL: pageUrl.String()})
+	if err != nil {
+		return nil, fmt.Errorf("failed to load page '%s': %w", pageUrl.String(), err)
+	}
+
+	err = page.WaitStable(1 * time.Second)
+
+	return page, err
 }

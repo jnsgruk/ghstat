@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"slices"
 	"sync"
+	"time"
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
@@ -161,6 +162,12 @@ func (m *Manager) checkLoggedIn() error {
 		return fmt.Errorf("failed to open url 'https://canonical.greenhouse.io': %w", err)
 	}
 
+	// Wait for the page to settle
+	err = page.WaitStable(300 * time.Millisecond)
+	if err != nil {
+		return fmt.Errorf("failed to check login status: %w", err)
+	}
+
 	// If redirected to the Ubuntu One login, handle the login correctly
 	info, err := page.Info()
 	if err != nil {
@@ -198,7 +205,11 @@ func (m *Manager) checkLoggedIn() error {
 		page.MustElement(`#id_email`).MustInput(login)
 		page.MustElement(`#id_password`).MustInput(password)
 		page.MustElement("[type=submit]").MustClick()
-		page.MustWaitStable()
+
+		err = page.WaitStable(300 * time.Millisecond)
+		if err != nil {
+			return fmt.Errorf("failed to check login status: %w", err)
+		}
 
 		prompt := promptui.Prompt{Label: "Ubuntu One OTP"}
 		otp, err := prompt.Run()
@@ -208,7 +219,11 @@ func (m *Manager) checkLoggedIn() error {
 
 		page.MustElement(`#id_oath_token`).MustInput(otp)
 		page.MustElement("[type=submit]").MustClick()
-		page.MustWaitStable()
+
+		err = page.WaitStable(300 * time.Millisecond)
+		if err != nil {
+			return fmt.Errorf("failed to check login status: %w", err)
+		}
 	}
 
 	return nil

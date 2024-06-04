@@ -41,13 +41,15 @@ func (o *MarkdownTableFormatter) Output(roles []Role) {
 			r.AppReviews(),
 			r.NeedsDecision(),
 			r.NeedsScheduling(),
+			r.WIScreening(),
+			r.WIGrading(),
 			r.Stale(),
 		})
 	}
 
 	tbl, _ := markdown.NewTableFormatterBuilder().
 		WithPrettyPrint().
-		Build("Lead", "Role", "CVs", "Decisions", "Scheduling", "Stale").
+		Build("Lead", "Role", "CVs", "Decisions", "Scheduling", "WI (Screen)", "WI (Grade)", "Stale").
 		Format(rows)
 
 	fmt.Print(tbl)
@@ -61,7 +63,7 @@ func (o *PrettyTableFormatter) Output(roles []Role) {
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
 
-	tbl := table.New("Lead", "Role", "CVs", "Decisions", "Scheduling", "Stale")
+	tbl := table.New("Lead", "Role", "CVs", "Decisions", "Scheduling", "WI (Screen)", "WI (Grade)", "Stale")
 	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 
 	for _, r := range roles {
@@ -71,6 +73,8 @@ func (o *PrettyTableFormatter) Output(roles []Role) {
 			r.AppReviews(),
 			r.NeedsDecision(),
 			r.NeedsScheduling(),
+			r.WIScreening(),
+			r.WIGrading(),
 			r.Stale(),
 		)
 	}

@@ -12,6 +12,8 @@ type Role struct {
 	RawAppReviews      int    `json:"appReviews"`
 	RawNeedsDecision   int    `json:"needsDecision"`
 	RawNeedsScheduling int    `json:"needsScheduling"`
+	RawWIScreening     int    `json:"wiScreening"`
+	RawWIGrading       int    `json:"wiGrading"`
 	RawStale           int    `json:"stale"`
 }
 
@@ -46,6 +48,18 @@ func (r *Role) NeedsDecision() string {
 // to be scheduled for the role, formatted as as string
 func (r *Role) NeedsScheduling() string {
 	return fmt.Sprintf("%d", r.RawNeedsScheduling)
+}
+
+// WIScreening returns the number of outstanding written
+// interview screenings for the role, formatted as as string
+func (r *Role) WIScreening() string {
+	return fmt.Sprintf("%d", r.RawWIScreening)
+}
+
+// WIGrading returns the number of outstanding written
+// interview gradings for the role, formatted as as string
+func (r *Role) WIGrading() string {
+	return fmt.Sprintf("%d", r.RawWIGrading)
 }
 
 // Stale returns the number of candidates who have seen no activity

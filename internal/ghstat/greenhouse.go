@@ -43,6 +43,42 @@ func (g *Greenhouse) AppReviews(roleId int64) int {
 	return count
 }
 
+// OutstandingWIGrading reports the number of candidates for a role who are outstanding
+// a full written interview grading by assigned graders in the Hold stage
+func (g *Greenhouse) OutstandingWIGrading(roleId int64) int {
+	slog.Debug("fetching outstanding written interview gradings for role", "role", roleId)
+	count, err := g.getCandidateCount(roleId, map[string]string{
+		"take_home_test_status_id[]": "9",
+		"in_stages[]":                "Hold",
+		"stage_status_id[]":          "2",
+	})
+
+	if err != nil {
+		slog.Debug("failed to retrieve written interview grading count for role", "role", roleId, "error", err.Error())
+		return 0
+	}
+
+	return count
+}
+
+// OutstandingWIScreening reports the number of candidates for a role who are outstanding
+// an initial written interview screen by the Hiring Lead for education
+func (g *Greenhouse) OutstandingWIScreening(roleId int64) int {
+	slog.Debug("fetching outstanding written interview initial screenings for role", "role", roleId)
+	count, err := g.getCandidateCount(roleId, map[string]string{
+		"take_home_test_status_id[]": "9",
+		"in_stages[]":                "Written Interview",
+		"stage_status_id[]":          "2",
+	})
+
+	if err != nil {
+		slog.Debug("failed to retrieve written interview screening count for role", "role", roleId, "error", err.Error())
+		return 0
+	}
+
+	return count
+}
+
 // OutstandingDecisions reports the number of candidates for a role who have an outstanding
 // decision to be made by the hiring lead
 func (g *Greenhouse) OutstandingDecisions(roleId int64) int {

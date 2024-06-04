@@ -98,6 +98,8 @@ func (m *Manager) Process() {
 					RawAppReviews:      g.AppReviews(roleId),
 					RawNeedsDecision:   g.OutstandingDecisions(roleId),
 					RawNeedsScheduling: g.OutstandingScheduling(roleId),
+					RawWIScreening:     g.OutstandingWIScreening(roleId),
+					RawWIGrading:       g.OutstandingWIGrading(roleId),
 					RawStale:           g.StaleCandidates(roleId),
 				})
 			}()

@@ -67,6 +67,7 @@ Usage:
   ghstat [flags]
 
 Flags:
+  -c, --config string   path to a specific config file to use
   -f, --format string   choose the output format ('pretty', 'markdown' or 'json') (default "pretty")
   -h, --help            help for ghstat
   -v, --verbose         enable verbose logging

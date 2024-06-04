@@ -1,7 +1,9 @@
 package ghstat
 
 import (
+	"bytes"
 	"errors"
+	"os"
 
 	"github.com/spf13/viper"
 )
@@ -19,22 +21,37 @@ type Lead struct {
 }
 
 // ParseConfig locates and parses the ghstat configuration
-func ParseConfig() (*Config, error) {
-	viper.SetConfigName("ghstat")
+func ParseConfig(configFile string) (*Config, error) {
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
-	viper.AddConfigPath("$HOME/.config/ghstat")
 
-	err := viper.ReadInConfig()
-	if err != nil {
-		if errors.As(err, &viper.ConfigFileNotFoundError{}) {
-			return nil, errors.New("no config file found, see 'ghstat --help' for details")
+	// If the user specified a path to the config file manually, load that file
+	if len(configFile) > 0 {
+		b, err := os.ReadFile(configFile)
+		if err != nil {
+			return nil, errors.New("unable to read specified config file")
 		}
-		return nil, errors.New("error parsing ghstat config file")
+
+		err = viper.ReadConfig(bytes.NewBuffer(b))
+		if err != nil {
+			return nil, errors.New("error parsing ghstat config file")
+		}
+	} else {
+		// Otherwise check in the default locations
+		viper.SetConfigName("ghstat")
+		viper.AddConfigPath(".")
+		viper.AddConfigPath("$HOME/.config/ghstat")
+
+		err := viper.ReadInConfig()
+		if err != nil {
+			if errors.As(err, &viper.ConfigFileNotFoundError{}) {
+				return nil, errors.New("no config file found, see 'ghstat --help' for details")
+			}
+			return nil, errors.New("error parsing ghstat config file")
+		}
 	}
 
 	conf := &Config{}
-	err = viper.Unmarshal(conf)
+	err := viper.Unmarshal(conf)
 	if err != nil {
 		return nil, errors.New("error parsing ghstat config file")
 	}

@@ -23,6 +23,8 @@ var (
 	validFormatters   []string = []string{"pretty", "markdown", "json"}
 	// Instantiation of the selected formatter
 	formatter ghstat.Formatter
+
+	configFile string
 )
 
 var shortDesc = "A utility for gathering role-specific statistics from Greenhouse."
@@ -85,7 +87,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Load and validate the configuration file
-		conf, err := ghstat.ParseConfig()
+		conf, err := ghstat.ParseConfig(configFile)
 		if err != nil {
 			return fmt.Errorf("failed to parse configuration: %w", err)
 		}
@@ -121,6 +123,7 @@ var rootCmd = &cobra.Command{
 func main() {
 	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose logging")
 	rootCmd.Flags().StringVarP(&selectedFormatter, "format", "f", "pretty", "choose the output format ('pretty', 'markdown' or 'json')")
+	rootCmd.Flags().StringVarP(&configFile, "config", "c", "", "path to a specific config file to use")
 	err := rootCmd.Execute()
 	if err != nil {
 		slog.Error(err.Error())

@@ -45,7 +45,8 @@ func (r *Role) NeedsDecision() string {
 }
 
 // NeedsScheduling returns the number of outstanding interviews
-// to be scheduled for the role, formatted as as string
+// to be scheduled for the role where the candidate has
+// already submitted their availability, formatted as as string
 func (r *Role) NeedsScheduling() string {
 	return fmt.Sprintf("%d", r.RawNeedsScheduling)
 }

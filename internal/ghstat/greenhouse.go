@@ -95,11 +95,13 @@ func (g *Greenhouse) OutstandingDecisions(roleId int64) int {
 	return count
 }
 
-// OutstandingScheduling reports the number of candidates for a role who require scheduling
+// OutstandingScheduling reports the number of candidates for a role who require scheduling,
+// and who have submitted their availability
 func (g *Greenhouse) OutstandingScheduling(roleId int64) int {
 	slog.Debug("fetching outstanding scheduling for role", "role", roleId)
 	count, err := g.getCandidateCount(roleId, map[string]string{
 		"interview_status_id[]": "1",
+		"availability_state":    "received",
 	})
 
 	if err != nil {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"slices"
 
 	"jnsgruk/ghstat/internal/ghstat"
 
@@ -15,20 +14,6 @@ import (
 var (
 	version string = "dev"
 	commit  string = "dev"
-	// Whether or not to use verbose logging
-	verbose bool
-
-	// The formatter specified at the command line with -f/--format
-	selectedFormatter string   = "pretty"
-	validFormatters   []string = []string{"pretty", "markdown", "json"}
-	// Instantiation of the selected formatter
-	formatter ghstat.Formatter
-
-	// Path to a specific configuration file to use
-	configFile string
-
-	// Filter to specific hiring leads
-	leads []string
 )
 
 var shortDesc = "A utility for gathering role-specific statistics from Greenhouse."
@@ -70,24 +55,19 @@ var rootCmd = &cobra.Command{
 	SilenceUsage:  true,
 
 	RunE: func(cmd *cobra.Command, args []string) error {
+		flags := cmd.PersistentFlags()
+		verbose, _ := flags.GetBool("verbose")
+		format, _ := flags.GetString("format")
+		configFile, _ := flags.GetString("config")
+		leads, _ := flags.GetStringSlice("lead")
+
 		// Ensure the slog logger is set for the correct format/log level
 		ghstat.SetupLogger(verbose)
 
-		// Validate the choice of formatter from the command line
-		if !slices.Contains(validFormatters, selectedFormatter) {
+		// Validate the choice of formatter from the command line and instantiate it
+		formatter := newFormatter(format)
+		if formatter == nil {
 			return fmt.Errorf("invalid output formatter specified, please choose one of 'pretty', 'markdown' or 'json'")
-		}
-
-		switch selectedFormatter {
-		case "pretty":
-			formatter = &ghstat.PrettyTableFormatter{}
-			break
-		case "markdown":
-			formatter = &ghstat.MarkdownTableFormatter{}
-			break
-		case "json":
-			formatter = &ghstat.JsonFormatter{}
-			break
 		}
 
 		// Load and validate the configuration file
@@ -124,11 +104,29 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+func newFormatter(input string) ghstat.Formatter {
+	switch input {
+	case "pretty":
+		return &ghstat.PrettyTableFormatter{}
+	case "markdown":
+		return &ghstat.MarkdownTableFormatter{}
+	case "json":
+		return &ghstat.JsonFormatter{}
+	default:
+		return nil
+	}
+
+}
+
+func init() {
+	flags := rootCmd.PersistentFlags()
+	flags.BoolP("verbose", "v", false, "enable verbose logging")
+	flags.StringP("format", "f", "pretty", "choose the output format ('pretty', 'markdown' or 'json')")
+	flags.StringP("config", "c", "", "path to a specific config file to use")
+	flags.StringSliceP("lead", "l", []string{}, "filter results to specific hiring leads from the config")
+}
+
 func main() {
-	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose logging")
-	rootCmd.Flags().StringVarP(&selectedFormatter, "format", "f", "pretty", "choose the output format ('pretty', 'markdown' or 'json')")
-	rootCmd.Flags().StringVarP(&configFile, "config", "c", "", "path to a specific config file to use")
-	rootCmd.Flags().StringSliceVarP(&leads, "lead", "l", []string{}, "filter results to specific hiring leads from the config")
 	err := rootCmd.Execute()
 	if err != nil {
 		slog.Error(err.Error())

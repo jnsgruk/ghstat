@@ -47,16 +47,15 @@ func (m *Manager) Init() error {
 		return err
 	}
 
-	var u string
+	b := launcher.New().Bin(path).Set("blink-settings", "imagesEnabled=false")
 
-	// Launch the browser and ensure that we can connect to the dev tools port.
 	// If we're inside a snap, use the `--no-sandbox` flag.
 	if len(os.Getenv("SNAP")) > 0 {
-		u, err = launcher.New().Bin(path).NoSandbox(true).Launch()
-	} else {
-		u, err = launcher.New().Bin(path).Launch()
+		b.NoSandbox(true)
 	}
 
+	// Launch the browser and ensure that we can connect to the dev tools port.
+	u, err := b.Launch()
 	if err != nil {
 		return fmt.Errorf("failed to launch browser: %w", err)
 	}

@@ -76,10 +76,10 @@ func (m *Manager) Init() error {
 }
 
 // Process iterates over the configured roles and gathers statistics about them
-func (m *Manager) Process() {
+func (m *Manager) Process(filter []string) {
 	wg := sync.WaitGroup{}
 
-	for _, lead := range m.config.Leads {
+	for _, lead := range m.filterLeads(filter) {
 		lead := lead
 		for _, roleId := range lead.Roles {
 			roleId := roleId
@@ -126,6 +126,22 @@ func (m *Manager) Output() {
 	if len(m.roles) > 0 {
 		m.formatter.Output(m.roles)
 	}
+}
+
+// filterLeads takes a list of repo names and returns a list of only those Leads
+// from the manager's config.
+func (m *Manager) filterLeads(filter []string) []Lead {
+	leads := m.config.Leads
+	if len(filter) > 0 {
+		filteredLeads := []Lead{}
+		for _, lead := range leads {
+			if slices.Contains(filter, lead.Name) {
+				filteredLeads = append(filteredLeads, lead)
+			}
+		}
+		leads = filteredLeads
+	}
+	return leads
 }
 
 // checkLoggedIn checks if the app is logged into Greenhouse from the cookies

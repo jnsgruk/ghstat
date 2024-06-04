@@ -24,7 +24,11 @@ var (
 	// Instantiation of the selected formatter
 	formatter ghstat.Formatter
 
+	// Path to a specific configuration file to use
 	configFile string
+
+	// Filter to specific hiring leads
+	leads []string
 )
 
 var shortDesc = "A utility for gathering role-specific statistics from Greenhouse."
@@ -108,7 +112,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Start gathering stats about the configured roles
-		manager.Process()
+		manager.Process(leads)
 
 		if !verbose {
 			s.Finish()
@@ -124,6 +128,7 @@ func main() {
 	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose logging")
 	rootCmd.Flags().StringVarP(&selectedFormatter, "format", "f", "pretty", "choose the output format ('pretty', 'markdown' or 'json')")
 	rootCmd.Flags().StringVarP(&configFile, "config", "c", "", "path to a specific config file to use")
+	rootCmd.Flags().StringSliceVarP(&leads, "lead", "l", []string{}, "filter results to specific hiring leads from the config")
 	err := rootCmd.Execute()
 	if err != nil {
 		slog.Error(err.Error())

@@ -7,7 +7,6 @@ import (
 
 	"jnsgruk/ghstat/internal/ghstat"
 
-	"github.com/slok/gospinner"
 	"github.com/spf13/cobra"
 )
 
@@ -57,18 +56,12 @@ var rootCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		flags := cmd.PersistentFlags()
 		verbose, _ := flags.GetBool("verbose")
-		format, _ := flags.GetString("format")
+		output, _ := flags.GetString("output")
 		configFile, _ := flags.GetString("config")
-		leads, _ := flags.GetStringSlice("lead")
+		leads, _ := flags.GetStringSlice("leads")
 
 		// Ensure the slog logger is set for the correct format/log level
-		ghstat.SetupLogger(verbose)
-
-		// Validate the choice of formatter from the command line and instantiate it
-		formatter := newFormatter(format)
-		if formatter == nil {
-			return fmt.Errorf("invalid output formatter specified, please choose one of 'pretty', 'markdown' or 'json'")
-		}
+		setupLogging(verbose)
 
 		// Load and validate the configuration file
 		conf, err := ghstat.ParseConfig(configFile)
@@ -76,54 +69,40 @@ var rootCmd = &cobra.Command{
 			return fmt.Errorf("failed to parse configuration: %w", err)
 		}
 
-		manager := ghstat.NewManager(conf, formatter)
+		conf.Filter = leads
+		conf.Verbose = verbose
+		conf.Formatter = output
 
-		// Ensure that we can launch a browser, and login to Greenhouse
-		err = manager.Init()
+		mgr, err := ghstat.NewManager(conf)
 		if err != nil {
-			return fmt.Errorf("failed to initialise ghstat: %w", err)
+			return err
 		}
-
-		// Show a spinner, unless verbose logging is switched on, then omit the spinner
-		// so that the two don't fight over stdout/stderr
-		s, _ := gospinner.NewSpinnerWithColor(gospinner.Dots, gospinner.FgGreen)
-		if !verbose {
-			s.Start("Processing Greenhouse roles...")
-		}
-
-		// Start gathering stats about the configured roles
-		manager.Process(leads)
-
-		if !verbose {
-			s.Succeed()
-		}
-
-		// Dump the results to stdout using the specified formatter
-		manager.Output()
-		return nil
+		return mgr.Execute()
 	},
 }
 
-func newFormatter(input string) ghstat.Formatter {
-	switch input {
-	case "pretty":
-		return &ghstat.PrettyTableFormatter{}
-	case "markdown":
-		return &ghstat.MarkdownTableFormatter{}
-	case "json":
-		return &ghstat.JsonFormatter{}
-	default:
-		return nil
+func setupLogging(verbose bool) {
+	logLevel := new(slog.LevelVar)
+
+	// Set the default log level to "INFO", and "DEBUG" if verbose is specified.
+	level := slog.LevelInfo
+	if verbose {
+		level = slog.LevelDebug
 	}
 
+	// Setup the TextHandler and ensure our configured logger is the default.
+	h := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
+	logger := slog.New(h)
+	slog.SetDefault(logger)
+	logLevel.Set(level)
 }
 
 func init() {
 	flags := rootCmd.PersistentFlags()
 	flags.BoolP("verbose", "v", false, "enable verbose logging")
-	flags.StringP("format", "f", "pretty", "choose the output format ('pretty', 'markdown' or 'json')")
+	flags.StringP("output", "o", "pretty", "choose the output format ('pretty', 'markdown' or 'json')")
 	flags.StringP("config", "c", "", "path to a specific config file to use")
-	flags.StringSliceP("lead", "l", []string{}, "filter results to specific hiring leads from the config")
+	flags.StringSliceP("leads", "l", []string{}, "filter results to specific hiring leads from the config")
 }
 
 func main() {

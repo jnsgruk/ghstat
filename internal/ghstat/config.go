@@ -8,20 +8,24 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Config represents ghstat's configuration format
-type Config struct {
-	Leads []Lead `yaml:"leads"`
+// config represents ghstat's configuration format
+type config struct {
+	Leads []lead `yaml:"leads"`
+	// The following are added at runtime according to CLI flags
+	Verbose   bool
+	Filter    []string
+	Formatter string
 }
 
-// Lead is a Canonical Hiring lead, who has a name and zero or more hiring roles
+// lead is a Canonical Hiring lead, who has a name and zero or more hiring roles
 // that they manage
-type Lead struct {
+type lead struct {
 	Name  string  `yaml:"name"`
 	Roles []int64 `yaml:"roles"`
 }
 
 // ParseConfig locates and parses the ghstat configuration
-func ParseConfig(configFile string) (*Config, error) {
+func ParseConfig(configFile string) (*config, error) {
 	viper.SetConfigType("yaml")
 
 	// If the user specified a path to the config file manually, load that file
@@ -50,7 +54,7 @@ func ParseConfig(configFile string) (*Config, error) {
 		}
 	}
 
-	conf := &Config{}
+	conf := &config{}
 	err := viper.Unmarshal(conf)
 	if err != nil {
 		return nil, errors.New("error parsing ghstat config file")

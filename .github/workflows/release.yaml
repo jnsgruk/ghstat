@@ -27,7 +27,7 @@ jobs:
       - name: Release ghstat
         id: build
         run: |
-          goreleaser release --debug --clean
+          goreleaser release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

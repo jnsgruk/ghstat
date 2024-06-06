@@ -3,6 +3,7 @@ package ghstat
 import (
 	"cmp"
 	"fmt"
+	"log/slog"
 	"sync/atomic"
 
 	"jnsgruk/ghstat/internal/formatters"
@@ -63,7 +64,7 @@ func (m *Manager) init(tc *taskmaster.TaskCtl) error {
 
 	err = browser.LoadCookies()
 	if err != nil {
-		return err
+		slog.Debug("failed to load cookies", "error", err.Error())
 	}
 
 	m.browser = browser

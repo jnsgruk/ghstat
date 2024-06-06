@@ -68,8 +68,9 @@ Usage:
 
 Flags:
   -c, --config string   path to a specific config file to use
-  -f, --format string   choose the output format ('pretty', 'markdown' or 'json') (default "pretty")
   -h, --help            help for ghstat
+  -l, --leads strings   filter results to specific hiring leads from the config
+  -o, --output string   choose the output format ('pretty', 'markdown' or 'json') (default "pretty")
   -v, --verbose         enable verbose logging
       --version         version for ghstat
 ```

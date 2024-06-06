@@ -89,7 +89,7 @@ func (m *Manager) saveState(tc *taskmaster.TaskCtl) error {
 	// Save the cookies from the current session for the next time ghstat is used
 	err := m.browser.SaveCookies()
 	if err != nil {
-		return fmt.Errorf("error saving cookies from browser: %w", err)
+		slog.Debug("failed to save cookies cookies", "error", err.Error())
 	}
 	return nil
 }

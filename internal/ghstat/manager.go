@@ -2,6 +2,7 @@ package ghstat
 
 import (
 	"cmp"
+	"context"
 	"fmt"
 	"log/slog"
 	"sync/atomic"
@@ -10,7 +11,8 @@ import (
 	"jnsgruk/ghstat/internal/greenhouse"
 	"jnsgruk/ghstat/internal/taskmaster"
 	"slices"
-	"sync"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // Manager is used for controlling the execution of the task workflow
@@ -125,21 +127,27 @@ func (m *Manager) process(tc *taskmaster.TaskCtl) error {
 		tc.SetProgress(float64(fetchedFields.Load()) / float64(totalFields) * 100)
 	}
 
+	// Create an error group to support concurrent processing of roles.
+	// Set a limit of 5 concurrent roles to process at max to avoid starving
+	// the machine of resources.
+	ctx := context.Background()
+	eg, _ := errgroup.WithContext(ctx)
+	eg.SetLimit(5)
+
 	g := greenhouse.NewGreenhouse(m.browser.RodBrowser)
 
-	// Iterate over the roles, process each in its own goroutine
-	wg := sync.WaitGroup{}
-
+	// Iterate over the roles, process each in its own goroutine.
 	for _, r := range m.roles {
 		r := r
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			r.Populate(g, incProgress)
-		}()
+		eg.Go(func() error {
+			err := r.Populate(g, incProgress)
+			return err
+		})
 	}
 
-	wg.Wait()
+	if err := eg.Wait(); err != nil {
+		return err
+	}
 
 	return nil
 }

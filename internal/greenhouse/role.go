@@ -86,6 +86,7 @@ func (r *Role) fetchTitle(g *Greenhouse) string {
 	if err != nil {
 		return ""
 	}
+	defer page.MustClose()
 
 	el, err := page.Element(".nav-title")
 	if err != nil {

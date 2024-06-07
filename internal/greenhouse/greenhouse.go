@@ -28,6 +28,7 @@ func (g *Greenhouse) CandidateCount(roleId int64, queries map[string]string) (in
 	if err != nil {
 		return -1, fmt.Errorf("failed to retrieve candidate page: %w", err)
 	}
+	defer page.MustClose()
 
 	// If this element is present, the number of results is zero
 	_, err = page.Timeout(500 * time.Millisecond).Element(".no_results--header")
@@ -59,6 +60,7 @@ func (g *Greenhouse) Login() error {
 	if err != nil {
 		return fmt.Errorf("failed to open url 'https://canonical.greenhouse.io': %w", err)
 	}
+	defer page.MustClose()
 
 	// Wait for the page to settle
 	err = page.WaitStable(300 * time.Millisecond)

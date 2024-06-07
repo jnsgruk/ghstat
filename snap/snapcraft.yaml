@@ -23,7 +23,9 @@ architectures:
 parts:
   ghstat:
     plugin: nil
-    source: .
+    source: https://github.com/jnsgruk/ghstat
+    source-type: git
+    source-tag: "v$SNAPCRAFT_PROJECT_VERSION"
     build-snaps:
       - chromium
       - go

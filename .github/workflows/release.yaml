@@ -15,6 +15,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Get version
+        id: version
+        run: |
+          version="$(yq -r ".version" snap/snapcraft.yaml)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          if [[ "v${version}" != "${GITHUB_REF#refs/*/}" ]]; then
+            echo "Snapcraft version and tag do not match; refusing to continue."
+            exit 1
+          fi
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -53,7 +64,13 @@ jobs:
       - name: Get version
         id: version
         run: |
-          echo "version=$(yq -r ".version" snap/snapcraft.yaml)" >> "$GITHUB_OUTPUT"
+          version="$(yq -r ".version" snap/snapcraft.yaml)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          if [[ "v${version}" != "${GITHUB_REF#refs/*/}" ]]; then
+            echo "Snapcraft version and tag do not match; refusing to continue."
+            exit 1
+          fi
 
       - name: Setup Snapcraft
         env:

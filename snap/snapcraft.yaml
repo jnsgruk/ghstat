@@ -31,7 +31,9 @@ parts:
       - go
     override-build: |
       mkdir -p $SNAPCRAFT_PART_INSTALL/bin
-      go build -o $SNAPCRAFT_PART_INSTALL/ghstat
+      go build \
+        -o $SNAPCRAFT_PART_INSTALL/ghstat \
+        -ldflags="-X main.version=$SNAPCRAFT_PROJECT_VERSION -X main.commit=$(git rev-parse HEAD)"
 
       # Cleanup some Chromium induced filesystem mess that fails the Snap review process
       rm $SNAPCRAFT_PART_INSTALL/usr/bin/xdg-email

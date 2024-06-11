@@ -60,10 +60,15 @@ var filters map[string]filterSet = map[string]filterSet{
 
 // Populate is used to fetch the details of each field from Greenhouse using
 // the specified filters
-func (r *Role) Populate(g *Greenhouse, incProgress func(amount int64)) error {
+func (r *Role) Populate(g GreenhouseClient, incProgress func(amount int64)) error {
 	slog.Debug("processing role", "roleId", r.ID, "lead", r.Lead)
 
-	r.Title = r.fetchTitle(g)
+	title, err := g.RoleTitle(r.ID)
+	if err != nil {
+		slog.Debug("failed to retrieve title for role", "role", r.ID, "error", err.Error())
+	}
+
+	r.Title = title
 	incProgress(1)
 
 	for k, v := range filters {
@@ -77,29 +82,6 @@ func (r *Role) Populate(g *Greenhouse, incProgress func(amount int64)) error {
 	}
 
 	return nil
-}
-
-// fetchTitle is a helper method for fetching the title of the req from
-// Greenhouse
-func (r *Role) fetchTitle(g *Greenhouse) string {
-	page, err := g.getCandidatesPage(r.ID, map[string]string{})
-	if err != nil {
-		return ""
-	}
-	defer page.MustClose()
-
-	el, err := page.Element(".nav-title")
-	if err != nil {
-		slog.Debug("failed to retrieve title for role", "role", r.ID, "error", err.Error())
-		return ""
-	}
-
-	text, err := el.Text()
-	if err != nil {
-		return ""
-	}
-
-	return text
 }
 
 // AppReviews returns the number of outstanding application reviews

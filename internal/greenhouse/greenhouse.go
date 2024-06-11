@@ -12,6 +12,14 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
+// GreenhouseClient is an interface which defines methods used for interacting
+// with Greenhouse for the purposes of ghstat only
+type GreenhouseClient interface {
+	RoleTitle(int64) (string, error)
+	CandidateCount(int64, map[string]string) (int, error)
+	Login() error
+}
+
 // Greenhouse is an internal representation of an instance of Greenhouse
 type Greenhouse struct {
 	browser *rod.Browser
@@ -52,6 +60,27 @@ func (g *Greenhouse) CandidateCount(roleId int64, queries map[string]string) (in
 	}
 
 	return count, nil
+}
+
+// RoleTitle reports the title of the specified roleId
+func (g *Greenhouse) RoleTitle(roleId int64) (string, error) {
+	page, err := g.getCandidatesPage(roleId, map[string]string{})
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch candidate page for role %d: %w", roleId, err)
+	}
+	defer page.MustClose()
+
+	el, err := page.Element(".nav-title")
+	if err != nil {
+		return "", fmt.Errorf("failed to retrieve title for role %d from candidate page: %w", roleId, err)
+	}
+
+	text, err := el.Text()
+	if err != nil {
+		return "", fmt.Errorf("failed to parse text from role title element: %w", err)
+	}
+
+	return text, nil
 }
 
 // Login is used to login to Greenhouse through the Ubuntu One SSO page

@@ -93,7 +93,7 @@ func (t *Task) start() {
 	t.status = Started
 	if t.Verbose {
 		slog.Debug("started step", "step", t.Name)
-	} else if !t.Verbose && !t.silent {
+	} else if !t.Verbose && !t.silent && t.Spinner != nil {
 		t.Spinner.Start(t.message)
 	}
 }
@@ -103,7 +103,7 @@ func (t *Task) fail(err error) {
 	t.status = Failed
 	if t.Verbose {
 		slog.Debug("failed step", "step", t.Name, "error", err.Error())
-	} else if !t.Verbose && !t.silent {
+	} else if !t.Verbose && !t.silent && t.Spinner != nil {
 		t.Spinner.SetMessage(t.message)
 		t.Spinner.Fail()
 	}
@@ -114,7 +114,7 @@ func (t *Task) succeed() {
 	t.status = Succeeded
 	if t.Verbose {
 		slog.Debug("completed step", "step", t.Name)
-	} else if !t.Verbose && !t.silent {
+	} else if !t.Verbose && !t.silent && t.Spinner != nil {
 		t.Spinner.SetMessage(t.message)
 		t.Spinner.Succeed()
 	}

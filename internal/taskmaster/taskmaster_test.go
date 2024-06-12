@@ -1,6 +1,7 @@
 package taskmaster
 
 import (
+	"fmt"
 	"os"
 	"slices"
 	"testing"
@@ -122,10 +123,49 @@ func TestExecuteTasksFailureRetry(t *testing.T) {
 
 	err = tm.Execute()
 	if err != nil {
-		t.Error("taskmaster execution should have failed")
+		t.Error("taskmaster execution failed")
 	}
 
 	if tm.tasks[0].status != Failed || tm.tasks[1].status != Succeeded {
 		t.Error("tasks have inconsistent statuses")
 	}
+}
+
+func TestTaskmasterTasks(t *testing.T) {
+	tm, err := NewTaskmaster(false)
+	if err != nil {
+		t.Error("failed to construct a new taskmaster")
+	}
+
+	tm.AddTask(NewTask("foo", "foobar", failWorker("foo"), true))
+	tm.AddTask(NewTask("bar", "barbaz", successWorker(), true))
+
+	expectedStatus := []TaskReport{
+		{
+			Name:     "foo",
+			Status:   Ready,
+			Message:  "foobar",
+			Progress: 0,
+		}, {
+			Name:     "bar",
+			Status:   Ready,
+			Message:  "barbaz",
+			Progress: 0,
+		},
+	}
+
+	if fmt.Sprint(expectedStatus) != fmt.Sprint(tm.Tasks()) {
+		t.Errorf("taskmaster reported inaccurate task report, expected %#v, got %#v", expectedStatus, tm.Tasks())
+	}
+
+	// This should fail, but we already tested the error reporting above
+	_ = tm.Execute()
+
+	// Update the expected status - we expect the first task to be reporting as failed
+	expectedStatus[0].Status = Failed
+
+	if fmt.Sprint(expectedStatus) != fmt.Sprint(tm.Tasks()) {
+		t.Errorf("taskmaster reported inaccurate task report, expected %#v, got %#v", expectedStatus, tm.Tasks())
+	}
+
 }

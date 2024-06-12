@@ -117,11 +117,14 @@ You can get started by just using Go, or with `goreleaser`:
 
 ```shell
 # Clone the repository
-git clone https://github.com/jnsgruk/releasegen
-cd releasegen
+git clone https://github.com/jnsgruk/ghstat
+cd ghstat
 
 # Build/run with Go
 go run main.go
+
+# Run the tests
+go test ./...
 
 # Build a snapshot release with goreleaser (output in ./dist)
 goreleaser build --rm-dist --snapshot

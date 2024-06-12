@@ -37,6 +37,21 @@ const (
 	Failed
 )
 
+func (s Status) String() string {
+	switch s {
+	case Ready:
+		return "Ready"
+	case Started:
+		return "Started"
+	case Succeeded:
+		return "Succeeded"
+	case Failed:
+		return "Failed"
+	default:
+		return ""
+	}
+}
+
 // NewTask constructs a new Task for a given function
 func NewTask(name, message string, taskFunc func(tc *TaskCtl) error, silent bool) *Task {
 	return &Task{

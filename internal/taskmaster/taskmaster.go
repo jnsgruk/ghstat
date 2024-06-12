@@ -14,6 +14,15 @@ type Taskmaster struct {
 	spinner *gospinner.Spinner
 }
 
+// TaskReport is used to give a read-only view of a task in the context
+// of the Taskmaster's overall status
+type TaskReport struct {
+	Name     string
+	Status   Status
+	Message  string
+	Progress float64
+}
+
 // NewTaskmaster constructs a new Manager with the specified config and
 // formatter
 func NewTaskmaster(verbose bool) (*Taskmaster, error) {
@@ -28,6 +37,22 @@ func NewTaskmaster(verbose bool) (*Taskmaster, error) {
 		spinner: spinner,
 		verbose: verbose,
 	}, nil
+}
+
+// Tasks returns a read-only representation of the taskmaster's tasks
+func (m *Taskmaster) Tasks() []TaskReport {
+	statuses := []TaskReport{}
+
+	for _, v := range m.tasks {
+		statuses = append(statuses, TaskReport{
+			Name:     v.Name,
+			Message:  v.message,
+			Progress: v.progress,
+			Status:   v.status,
+		})
+	}
+
+	return statuses
 }
 
 // AddTask is used to add tasks to the Taskmaster for future execution

@@ -1,4 +1,4 @@
-package ghstat
+package greenhouse
 
 import (
 	"encoding/json"
@@ -16,7 +16,7 @@ import (
 
 // browser is an interface defining a set of methods that should
 // be present on a browser struct for it to be compatible with ghstat
-type browser interface {
+type Browser interface {
 	Init() error
 	LoadCookies() error
 	SaveCookies() error

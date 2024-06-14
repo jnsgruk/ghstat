@@ -5,32 +5,30 @@ import (
 	"fmt"
 	"jnsgruk/ghstat/internal/taskmaster"
 	"os"
-	"path"
 	"testing"
-
-	"github.com/go-rod/rod"
 )
 
 func TestNewManagerSuccess(t *testing.T) {
-	m, _, tmpDir, err := testManager(t)
-	defer os.RemoveAll(tmpDir)
+	m, _, err := testManager()
 	if err != nil {
-		t.Errorf("failed to construct a manager instance")
+		t.Fatalf("failed to construct a manager instance: %s", err.Error())
 	}
 
 	if m.taskmaster == nil {
-		t.Error("manager was not constructed with a valid taskmaster")
+		t.Fatalf("manager was not constructed with a valid taskmaster")
 	}
 }
 
 func TestNewManagerFailure(t *testing.T) {
-	_, err := NewManager(&config{
+	config := &config{
 		Leads:   []lead{},
 		Verbose: false,
 		Filter:  []string{},
 		// This is the attribute that should cause the failure
 		Formatter: "foobar",
-	}, os.Stdout)
+	}
+
+	_, err := NewManager(config, &FakeGreenhouse{}, os.Stdout)
 
 	if err == nil {
 		t.Errorf("failed to catch an invalid formatter type when constructing a manager")
@@ -38,12 +36,17 @@ func TestNewManagerFailure(t *testing.T) {
 }
 
 func TestManagerTasksNoRoles(t *testing.T) {
-	m, _, tmpDir, _ := testManager(t)
-	defer os.RemoveAll(tmpDir)
+	m, _, err := testManager()
+	if err != nil {
+		t.Fatalf("failed to get a manager instance: %s", err.Error())
+	}
 
-	m.Execute()
+	err = m.Execute()
+	if err != nil {
+		t.Fatalf("failed to execute manager's tasks: %s", err.Error())
+	}
 
-	expectedTasks := []string{"init", "login", "processing", "save-state", "output"}
+	expectedTasks := []string{"login", "processing", "output"}
 	tasks := []string{}
 
 	for _, task := range m.taskmaster.Tasks() {
@@ -60,8 +63,7 @@ func TestManagerTasksNoRoles(t *testing.T) {
 }
 
 func TestManagerTasksNumRolesProcessed(t *testing.T) {
-	m, _, tmpDir, _ := testManager(t)
-	defer os.RemoveAll(tmpDir)
+	m, _, _ := testManager()
 
 	m.config.Leads = []lead{{
 		Name:  "Joe Bloggs",
@@ -79,8 +81,7 @@ func TestManagerTasksNumRolesProcessed(t *testing.T) {
 }
 
 func TestManagerTasksFormatterOutputWriter(t *testing.T) {
-	m, b, tmpDir, _ := testManager(t)
-	defer os.RemoveAll(tmpDir)
+	m, b, _ := testManager()
 
 	m.config.Leads = []lead{{
 		Name:  "Joe Bloggs",
@@ -104,41 +105,18 @@ func TestManagerTasksFormatterOutputWriter(t *testing.T) {
 	}
 }
 
-func TestManagerTasksBrowserSavesState(t *testing.T) {
-	m, _, tmpDir, _ := testManager(t)
-	defer os.RemoveAll(tmpDir)
-
-	m.config.Leads = []lead{{
-		Name:  "Joe Bloggs",
-		Roles: []int64{123, 456, 789},
-	}}
-
-	err := m.Execute()
-	if err != nil {
-		t.Errorf("error executing the manager: %s", err.Error())
-	}
-
-	_, err = os.Stat(path.Join(tmpDir, "cookies.json"))
-	if err != nil {
-		t.Errorf("state was not correctly saved after manager execution")
-	}
-}
-
-func testManager(t *testing.T) (*Manager, *bytes.Buffer, string, error) {
-	var b bytes.Buffer
-
-	m, err := NewManager(&config{
+func testManager() (*Manager, *bytes.Buffer, error) {
+	config := &config{
 		Leads:     []lead{},
 		Verbose:   true,
 		Filter:    []string{},
 		Formatter: "markdown",
-	}, &b)
+	}
 
-	tmpDir := t.TempDir()
-	m.greenhouse = &FakeGreenhouse{}
-	m.browser = &FakeBrowser{tmpDir: tmpDir}
+	var b bytes.Buffer
+	m, err := NewManager(config, &FakeGreenhouse{}, &b)
 
-	return m, &b, tmpDir, err
+	return m, &b, err
 }
 
 type FakeGreenhouse struct{}
@@ -153,25 +131,4 @@ func (fg *FakeGreenhouse) CandidateCount(roleId int64, query map[string]string) 
 
 func (fg *FakeGreenhouse) Login() error {
 	return nil
-}
-
-type FakeBrowser struct {
-	tmpDir string
-}
-
-func (fb *FakeBrowser) Init() error {
-	return nil
-}
-
-func (fb *FakeBrowser) LoadCookies() error {
-	return nil
-}
-
-func (fb *FakeBrowser) SaveCookies() error {
-	os.Create(path.Join(fb.tmpDir, "cookies.json"))
-	return nil
-}
-
-func (fb *FakeBrowser) Browser() *rod.Browser {
-	return &rod.Browser{}
 }

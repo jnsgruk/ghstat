@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log/slog"
 	"sync/atomic"
 
 	"jnsgruk/ghstat/internal/formatters"
@@ -23,17 +22,16 @@ type Manager struct {
 	config     *config
 	formatter  formatters.Formatter
 
-	browser    browser
 	greenhouse greenhouse.GreenhouseClient
 }
 
 // NewManager constructs a new Manager, ensuring that a valid formatter has been chosen,
 // and ensures it has an associated Taskmaster instance
-func NewManager(c *config, writer io.Writer) (*Manager, error) {
+func NewManager(c *config, client greenhouse.GreenhouseClient, writer io.Writer) (*Manager, error) {
 	m := &Manager{config: c}
 
-	m.formatter = formatters.NewFormatter(c.Formatter, writer)
-	if m.formatter == nil {
+	formatter := formatters.NewFormatter(c.Formatter, writer)
+	if formatter == nil {
 		return nil, fmt.Errorf("invalid output formatter specified, please choose one of 'pretty', 'markdown' or 'json'")
 	}
 
@@ -42,42 +40,20 @@ func NewManager(c *config, writer io.Writer) (*Manager, error) {
 		return nil, fmt.Errorf("couldn't create taskmaster: %w", err)
 	}
 
+	m.formatter = formatter
 	m.taskmaster = mgr
+	m.greenhouse = client
 
 	return m, nil
 }
 
 // Execute is the main entrypoint into the ghstat manager
 func (m *Manager) Execute() error {
-	m.taskmaster.AddTask(taskmaster.NewTask("init", "Initialising", m.init, false))
 	m.taskmaster.AddTask(taskmaster.NewTask("login", "Logging in", m.login, false))
 	m.taskmaster.AddTask(taskmaster.NewTask("processing", "Processing roles", m.process, false))
-	m.taskmaster.AddTask(taskmaster.NewTask("save-state", "Saving state", m.saveState, false))
 	m.taskmaster.AddTask(taskmaster.NewTask("output", "Output", m.output, true))
 
 	return m.taskmaster.Execute()
-}
-
-// init takes care of finding and starting a browser instance, and loading
-// cookies from any previous ghstat sessions
-func (m *Manager) init(tc *taskmaster.TaskCtl) error {
-	if m.browser == nil {
-		browser := &ghstatBrowser{}
-		err := browser.Init()
-		if err != nil {
-			return err
-		}
-
-		err = browser.LoadCookies()
-		if err != nil {
-			slog.Debug("failed to load cookies", "error", err.Error())
-		}
-
-		m.browser = browser
-		m.greenhouse = greenhouse.NewGreenhouse(m.browser.Browser())
-	}
-
-	return nil
 }
 
 // login checks if the app is logged into Greenhouse from the cookies
@@ -87,17 +63,6 @@ func (m *Manager) login(tc *taskmaster.TaskCtl) error {
 	err := m.greenhouse.Login()
 	if err != nil {
 		return fmt.Errorf("failed to login to Greenhouse: %w", err)
-	}
-	return nil
-}
-
-// saveState saves any cookies from the current browser session to
-// the user's config directory
-func (m *Manager) saveState(tc *taskmaster.TaskCtl) error {
-	// Save the cookies from the current session for the next time ghstat is used
-	err := m.browser.SaveCookies()
-	if err != nil {
-		slog.Debug("failed to save cookies cookies", "error", err.Error())
 	}
 	return nil
 }

@@ -2,6 +2,7 @@ package greenhouse
 
 import (
 	"fmt"
+	"log/slog"
 	"net/url"
 	"os"
 	"strconv"
@@ -22,11 +23,22 @@ type GreenhouseClient interface {
 
 // Greenhouse is an internal representation of an instance of Greenhouse
 type Greenhouse struct {
-	browser *rod.Browser
+	ghb *ghstatBrowser
 }
 
-func NewGreenhouse(browser *rod.Browser) *Greenhouse {
-	return &Greenhouse{browser: browser}
+func NewGreenhouse() (*Greenhouse, error) {
+	ghb := &ghstatBrowser{}
+	err := ghb.Init()
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialise browser: %w", err)
+	}
+
+	err = ghb.LoadCookies()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load cookies: %w", err)
+	}
+
+	return &Greenhouse{ghb: ghb}, nil
 }
 
 // CandidateCount is a helper method for requesting Greenhouse candidate pages with
@@ -85,7 +97,7 @@ func (g *Greenhouse) RoleTitle(roleId int64) (string, error) {
 
 // Login is used to login to Greenhouse through the Ubuntu One SSO page
 func (g *Greenhouse) Login() error {
-	page, err := g.browser.Page(proto.TargetCreateTarget{URL: "https://canonical.greenhouse.io"})
+	page, err := g.ghb.browser.Page(proto.TargetCreateTarget{URL: "https://canonical.greenhouse.io"})
 	if err != nil {
 		return fmt.Errorf("failed to open url 'https://canonical.greenhouse.io': %w", err)
 	}
@@ -147,6 +159,14 @@ func (g *Greenhouse) Login() error {
 		if err != nil {
 			return fmt.Errorf("failed to check login status: %w", err)
 		}
+
+		// Save cookies to avoid having to do the login flow as often.
+		// This is non-critical, so log an error if this fails, but don't
+		// return one, which would cancel the task.
+		err = g.ghb.SaveCookies()
+		if err != nil {
+			slog.Debug("failed to save cookies cookies", "error", err.Error())
+		}
 	}
 
 	return nil
@@ -172,7 +192,7 @@ func (g *Greenhouse) getCandidatesPage(roleId int64, queries map[string]string) 
 
 	pageUrl.RawQuery = fields.Encode()
 
-	page, err := g.browser.Page(proto.TargetCreateTarget{URL: pageUrl.String()})
+	page, err := g.ghb.browser.Page(proto.TargetCreateTarget{URL: pageUrl.String()})
 	if err != nil {
 		return nil, fmt.Errorf("failed to load page '%s': %w", pageUrl.String(), err)
 	}

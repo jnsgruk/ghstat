@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"jnsgruk/ghstat/internal/ghstat"
+	"jnsgruk/ghstat/internal/greenhouse"
 
 	"github.com/spf13/cobra"
 )
@@ -73,7 +74,12 @@ var rootCmd = &cobra.Command{
 		conf.Verbose = verbose
 		conf.Formatter = output
 
-		mgr, err := ghstat.NewManager(conf, os.Stdout)
+		gh, err := greenhouse.NewGreenhouse()
+		if err != nil {
+			return fmt.Errorf("failed to create greenhouse client: %w", err)
+		}
+
+		mgr, err := ghstat.NewManager(conf, gh, os.Stdout)
 		if err != nil {
 			return err
 		}

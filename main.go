@@ -73,7 +73,7 @@ var rootCmd = &cobra.Command{
 		conf.Verbose = verbose
 		conf.Formatter = output
 
-		mgr, err := ghstat.NewManager(conf)
+		mgr, err := ghstat.NewManager(conf, os.Stdout)
 		if err != nil {
 			return err
 		}

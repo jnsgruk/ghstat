@@ -26,10 +26,10 @@ type Manager struct {
 
 // NewManager constructs a new Manager, ensuring that a valid formatter has been chosen,
 // and ensures it has an associated Taskmaster instance
-func NewManager(c *config) (*Manager, error) {
+func NewManager(c *config, writer io.Writer) (*Manager, error) {
 	m := &Manager{config: c}
 
-	m.formatter = formatters.NewFormatter(c.Formatter)
+	m.formatter = formatters.NewFormatter(c.Formatter, writer)
 	if m.formatter == nil {
 		return nil, fmt.Errorf("invalid output formatter specified, please choose one of 'pretty', 'markdown' or 'json'")
 	}

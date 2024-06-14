@@ -3,6 +3,7 @@ package formatters
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"jnsgruk/ghstat/internal/greenhouse"
 	"log/slog"
 	"strconv"
@@ -18,14 +19,14 @@ type Formatter interface {
 }
 
 // NewFormatter constructs a formatter of the requested type
-func NewFormatter(input string) Formatter {
+func NewFormatter(input string, writer io.Writer) Formatter {
 	switch input {
 	case "pretty":
-		return &PrettyTableFormatter{}
+		return &PrettyTableFormatter{writer: writer}
 	case "markdown":
-		return &MarkdownTableFormatter{}
+		return &MarkdownTableFormatter{writer: writer}
 	case "json":
-		return &JsonFormatter{}
+		return &JsonFormatter{writer: writer}
 	default:
 		return nil
 	}
@@ -33,7 +34,9 @@ func NewFormatter(input string) Formatter {
 
 // JsonFormatter is a simple formatter that marshals the gathered information
 // about a set of roles to a simple json format
-type JsonFormatter struct{}
+type JsonFormatter struct {
+	writer io.Writer
+}
 
 // Output dumps the role information to stdout as JSON
 func (o *JsonFormatter) Output(roles []*greenhouse.Role) {
@@ -41,11 +44,13 @@ func (o *JsonFormatter) Output(roles []*greenhouse.Role) {
 	if err != nil {
 		slog.Error("could not marshal output data", "error", err.Error())
 	}
-	fmt.Println(string(b))
+	fmt.Fprint(o.writer, string(b))
 }
 
 // MarkdownTableFormatter is used for rendering stats as a Markdown table
-type MarkdownTableFormatter struct{}
+type MarkdownTableFormatter struct {
+	writer io.Writer
+}
 
 // Output dumps the role information as a Markdown table to stdout
 func (o *MarkdownTableFormatter) Output(roles []*greenhouse.Role) {
@@ -68,18 +73,20 @@ func (o *MarkdownTableFormatter) Output(roles []*greenhouse.Role) {
 		Build("Lead", "Role", "CVs", "Decisions", "Scheduling", "WI (Screen)", "WI (Grade)", "Stale").
 		Format(rows)
 
-	fmt.Print(tbl)
+	fmt.Fprint(o.writer, tbl)
 }
 
 // PrettyTableFormatter dumps the role information to a pretty printed terminal
-type PrettyTableFormatter struct{}
+type PrettyTableFormatter struct {
+	writer io.Writer
+}
 
 // Output dumps the pretty table to stdout
 func (o *PrettyTableFormatter) Output(roles []*greenhouse.Role) {
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
 
-	tbl := table.New("Lead", "Role", "CVs", "Decisions", "Scheduling", "WI (Screen)", "WI (Grade)", "Stale")
+	tbl := table.New("Lead", "Role", "CVs", "Decisions", "Scheduling", "WI (Screen)", "WI (Grade)", "Stale").WithWriter(o.writer)
 	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 
 	for _, r := range roles {

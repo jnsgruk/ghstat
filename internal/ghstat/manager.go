@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"sync/atomic"
 
@@ -19,9 +20,11 @@ import (
 type Manager struct {
 	taskmaster *taskmaster.Taskmaster
 	roles      []*greenhouse.Role
-	browser    *browser
 	config     *config
 	formatter  formatters.Formatter
+
+	browser    browser
+	greenhouse greenhouse.GreenhouseClient
 }
 
 // NewManager constructs a new Manager, ensuring that a valid formatter has been chosen,
@@ -58,18 +61,22 @@ func (m *Manager) Execute() error {
 // init takes care of finding and starting a browser instance, and loading
 // cookies from any previous ghstat sessions
 func (m *Manager) init(tc *taskmaster.TaskCtl) error {
-	browser := &browser{}
-	err := browser.Init()
-	if err != nil {
-		return err
+	if m.browser == nil {
+		browser := &ghstatBrowser{}
+		err := browser.Init()
+		if err != nil {
+			return err
+		}
+
+		err = browser.LoadCookies()
+		if err != nil {
+			slog.Debug("failed to load cookies", "error", err.Error())
+		}
+
+		m.browser = browser
+		m.greenhouse = greenhouse.NewGreenhouse(m.browser.Browser())
 	}
 
-	err = browser.LoadCookies()
-	if err != nil {
-		slog.Debug("failed to load cookies", "error", err.Error())
-	}
-
-	m.browser = browser
 	return nil
 }
 
@@ -77,8 +84,7 @@ func (m *Manager) init(tc *taskmaster.TaskCtl) error {
 // created before, and if not walks the user through the checkLoggedIn flow by prompting
 // for their username, password and OTP
 func (m *Manager) login(tc *taskmaster.TaskCtl) error {
-	g := greenhouse.NewGreenhouse(m.browser.RodBrowser)
-	err := g.Login()
+	err := m.greenhouse.Login()
 	if err != nil {
 		return fmt.Errorf("failed to login to Greenhouse: %w", err)
 	}
@@ -134,13 +140,11 @@ func (m *Manager) process(tc *taskmaster.TaskCtl) error {
 	eg, _ := errgroup.WithContext(ctx)
 	eg.SetLimit(5)
 
-	g := greenhouse.NewGreenhouse(m.browser.RodBrowser)
-
 	// Iterate over the roles, process each in its own goroutine.
 	for _, r := range m.roles {
 		r := r
 		eg.Go(func() error {
-			err := r.Populate(g, incProgress)
+			err := r.Populate(m.greenhouse, incProgress)
 			return err
 		})
 	}

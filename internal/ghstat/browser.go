@@ -14,15 +14,29 @@ import (
 	"github.com/kirsle/configdir"
 )
 
-// browser represents a browser and it's state in ghstat
-type browser struct {
-	RodBrowser *rod.Browser
+// browser is an interface defining a set of methods that should
+// be present on a browser struct for it to be compatible with ghstat
+type browser interface {
+	Init() error
+	LoadCookies() error
+	SaveCookies() error
+	Browser() *rod.Browser
+}
+
+// ghstatBrowser represents a ghstatBrowser and it's state in ghstat
+type ghstatBrowser struct {
+	browser *rod.Browser
+}
+
+// Browser returns a pointer to the underlying rod.Browser instance
+func (b *ghstatBrowser) Browser() *rod.Browser {
+	return b.browser
 }
 
 // Init ensures that the application can launch the configured browser, and
 // attempts to login in Greenhouse, first by using saved cookies in a known
 // location, and secondly by prompting for login, password and OTP.
-func (b *browser) Init() error {
+func (b *ghstatBrowser) Init() error {
 	// Get the path to the user's browser using a list of predefined browser bin names
 	path, err := findBrowser()
 	if err != nil {
@@ -42,9 +56,9 @@ func (b *browser) Init() error {
 		return fmt.Errorf("failed to launch browser: %w", err)
 	}
 
-	b.RodBrowser = rod.New().ControlURL(u)
+	b.browser = rod.New().ControlURL(u)
 
-	err = b.RodBrowser.Connect()
+	err = b.browser.Connect()
 	if err != nil {
 		return fmt.Errorf("failed to connect to browser control url: %w", err)
 	}
@@ -54,7 +68,7 @@ func (b *browser) Init() error {
 
 // loadCookies attempts to load cookies from a previous ghstat session
 // from the users config directory
-func (b *browser) LoadCookies() error {
+func (b *ghstatBrowser) LoadCookies() error {
 	cookies := []*proto.NetworkCookieParam{}
 
 	configPath := configdir.LocalConfig("ghstat")
@@ -70,7 +84,7 @@ func (b *browser) LoadCookies() error {
 		return fmt.Errorf("failed to parse cookie store file: %w", err)
 	}
 
-	err = b.RodBrowser.SetCookies(cookies)
+	err = b.browser.SetCookies(cookies)
 	if err != nil {
 		return fmt.Errorf("failed to load cookies into browser: %w", err)
 	}
@@ -80,9 +94,9 @@ func (b *browser) LoadCookies() error {
 
 // saveCookies dumps all the cookies from the browser's current session
 // into a file in the users config directory
-func (b *browser) SaveCookies() error {
+func (b *ghstatBrowser) SaveCookies() error {
 	// Save the cookies to the cookies file
-	cookies, _ := b.RodBrowser.GetCookies()
+	cookies, _ := b.browser.GetCookies()
 	buf, err := json.MarshalIndent(cookies, "", "  ")
 	if err != nil {
 		return fmt.Errorf("could not marshal cookie data: %w", err)

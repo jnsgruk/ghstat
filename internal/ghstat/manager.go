@@ -27,22 +27,23 @@ type Manager struct {
 
 // NewManager constructs a new Manager, ensuring that a valid formatter has been chosen,
 // and ensures it has an associated Taskmaster instance
-func NewManager(c *config, client greenhouse.GreenhouseClient, writer io.Writer) (*Manager, error) {
-	m := &Manager{config: c}
-
-	formatter := formatters.NewFormatter(c.Formatter, writer)
+func NewManager(config *config, greenhouse greenhouse.GreenhouseClient, writer io.Writer) (*Manager, error) {
+	formatter := formatters.NewFormatter(config.Formatter, writer)
 	if formatter == nil {
 		return nil, fmt.Errorf("invalid output formatter specified, please choose one of 'pretty', 'markdown' or 'json'")
 	}
 
-	mgr, err := taskmaster.NewTaskmaster(m.config.Verbose)
+	taskmaster, err := taskmaster.NewTaskmaster(config.Verbose)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create taskmaster: %w", err)
 	}
 
-	m.formatter = formatter
-	m.taskmaster = mgr
-	m.greenhouse = client
+	m := &Manager{
+		formatter:  formatter,
+		taskmaster: taskmaster,
+		greenhouse: greenhouse,
+		config:     config,
+	}
 
 	return m, nil
 }

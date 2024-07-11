@@ -35,7 +35,7 @@ func NewGreenhouse() (*Greenhouse, error) {
 
 	err = ghb.LoadCookies()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load cookies: %w", err)
+		slog.Debug("failed to load cookies for browser", "error", err.Error())
 	}
 
 	return &Greenhouse{ghb: ghb}, nil

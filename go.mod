@@ -5,7 +5,7 @@ go 1.22.2
 require (
 	github.com/fatih/color v1.17.0
 	github.com/fbiville/markdown-table-formatter v0.3.0
-	github.com/go-rod/rod v0.116.1
+	github.com/go-rod/rod v0.116.2
 	github.com/kirsle/configdir v0.0.0-20170128060238-e45d2f54772f
 	github.com/manifoldco/promptui v0.9.0
 	github.com/rodaine/table v1.2.0
@@ -36,7 +36,7 @@ require (
 	github.com/ysmood/goob v0.4.0 // indirect
 	github.com/ysmood/got v0.40.0 // indirect
 	github.com/ysmood/gson v0.7.3 // indirect
-	github.com/ysmood/leakless v0.8.0 // indirect
+	github.com/ysmood/leakless v0.9.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20240531132922-fd00a4e0eefc // indirect
 	golang.org/x/sys v0.20.0 // indirect

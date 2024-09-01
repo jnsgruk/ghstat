@@ -8,7 +8,7 @@ require (
 	github.com/go-rod/rod v0.116.2
 	github.com/kirsle/configdir v0.0.0-20170128060238-e45d2f54772f
 	github.com/manifoldco/promptui v0.9.0
-	github.com/rodaine/table v1.2.0
+	github.com/rodaine/table v1.3.0
 	github.com/slok/gospinner v0.1.1
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0

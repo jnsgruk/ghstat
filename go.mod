@@ -1,6 +1,8 @@
 module jnsgruk/ghstat
 
 go 1.22.2
+toolchain go1.24.1
+
 require (
 	github.com/fatih/color v1.18.0
 	github.com/fbiville/markdown-table-formatter v0.3.0
@@ -11,7 +13,7 @@ require (
 	github.com/slok/gospinner v0.1.1
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
-	golang.org/x/sync v0.11.0
+	golang.org/x/sync v0.12.0
 )
 
 require (

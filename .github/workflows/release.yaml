@@ -91,7 +91,6 @@ jobs:
 
       - name: Build snap
         env:
-          SNAPCRAFT_REMOTE_BUILD_STRATEGY: force-fallback
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           echo "::group::remote-build output"
@@ -99,11 +98,11 @@ jobs:
           echo "::endgroup::"
 
           echo "::group::amd64 build log"
-          cat "ghstat_amd64.txt"
+          cat "snapcraft-ghstat*amd64.txt"
           echo "::endgroup::"
 
           echo "::group::arm64 build log"
-          cat "ghstat_arm64.txt"
+          cat "snapcraft-ghstat*arm64.txt"
           echo "::endgroup::"
 
       - name: Release snap to edge

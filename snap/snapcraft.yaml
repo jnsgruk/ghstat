@@ -1,5 +1,5 @@
 name: ghstat
-version: "0.4.2"
+version: "0.4.3"
 
 summary: Gather statistics about hiring reqs on Greenhouse
 description: |
@@ -65,6 +65,9 @@ parts:
 apps:
   ghstat:
     command: ghstat
+    environment:
+      XDG_CONFIG_HOME: $XDG_RUNTIME_DIR/.chromium
+      XDG_CACHE_HOME: $XDG_RUNTIME_DIR/.chromium
     plugs:
       - desktop
       - desktop-legacy

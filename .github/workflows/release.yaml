@@ -98,11 +98,11 @@ jobs:
           echo "::endgroup::"
 
           echo "::group::amd64 build log"
-          cat "snapcraft-ghstat*amd64.txt"
+          cat snapcraft-ghstat*amd64*.txt
           echo "::endgroup::"
 
           echo "::group::arm64 build log"
-          cat "snapcraft-ghstat*arm64.txt"
+          cat snapcraft-ghstat*arm64*.txt
           echo "::endgroup::"
 
       - name: Release snap to edge

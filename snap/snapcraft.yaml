@@ -11,14 +11,14 @@ contact: https://github.com/jnsgruk/ghstat/issues
 issues: https://github.com/jnsgruk/ghstat/issues
 source-code: https://github.com/jnsgruk/ghstat
 
-base: core22
+base: core24
 confinement: strict
 grade: stable
 compression: lzo
 
-architectures:
-  - build-on: amd64
-  - build-on: arm64
+platforms:
+  amd64:
+  arm64:
 
 parts:
   ghstat:
@@ -42,12 +42,12 @@ parts:
       - chromium
     stage-packages:
       # dependencies required by chromium
-      - libasound2
-      - libatk-bridge2.0-0
-      - libatk1.0-0
-      - libatspi2.0-0
+      - libasound2t64
+      - libatk-bridge2.0-0t64
+      - libatk1.0-0t64
+      - libatspi2.0-0t64
       - libcairo2
-      - libcups2
+      - libcups2t64
       - libdrm2
       - libgbm1
       - libnss3
